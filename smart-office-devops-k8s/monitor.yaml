@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: smart-office-monitor
+  namespace: monitoring
+  labels:
+    # 👇👇👇 هذا هو المفتاح الذي كان ناقصاً!
+    release: monitoring
+    app: smart-office-backend
+spec:
+  selector:
+    matchLabels:
+      app: smart-office-backend
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+  - port: web
+    path: /metrics
+    interval: 15s

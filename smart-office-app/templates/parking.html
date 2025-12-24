@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Parking 3D</title>
+  <style>
+    body { margin:0; overflow:hidden; background:#222; font-family:sans-serif; }
+    #ui {
+      position:absolute; top:10px; left:10px; z-index:1;
+      background:rgba(0,0,0,0.7); color:white; padding:15px;
+      border-radius:8px;
+    }
+    #ui h2 { margin-top:0; }
+    #ui span { display:inline-block; width:16px; height:16px; margin-right:6px; vertical-align:middle; border-radius:3px; }
+    #ui .available { background:limegreen; }
+    #ui .reserved { background:red; }
+    #ui .guest { background:dodgerblue; }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <h2>Parking Status</h2>
+  <p><span class="available"></span> Available</p>
+  <p><span class="reserved"></span> Reserved</p>
+  <p><span class="guest"></span> Guest</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script>
+  // --- BASIC SETUP ---
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x202020);
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.set(10, 12, 18);
+  camera.lookAt(0,0,0);
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+  scene.add(new THREE.AmbientLight(0x404040));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight.position.set(10,15,10);
+  scene.add(dirLight);
+
+  const ground = new THREE.Mesh(
+    new THREE.BoxGeometry(30,0.5,20),
+    new THREE.MeshPhongMaterial({color:0x555555})
+  );
+  ground.position.y = -0.25;
+  scene.add(ground);
+
+  // --- 3D OBJECT CREATION FUNCTIONS ---
+  function createSpot(x,z){
+    const spot = new THREE.Mesh(
+      new THREE.PlaneGeometry(3,5),
+      new THREE.MeshPhongMaterial({color:0xffffff, side:THREE.DoubleSide})
+    );
+    spot.rotation.x = -Math.PI/2;
+    spot.position.set(x,0.01,z);
+    scene.add(spot);
+    return spot;
+  }
+
+  function createCar(x,z){
+    const carGroup = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8,0.6,3.5), new THREE.MeshPhongMaterial({color:0xff0000}));
+    body.position.y = 0.4;
+    carGroup.add(body);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.4,1.5), new THREE.MeshPhongMaterial({color:0x222222}));
+    roof.position.set(0,0.9,0);
+    carGroup.add(roof);
+    const wheelGeom = new THREE.CylinderGeometry(0.3,0.3,0.4,16);
+    const wheelMat = new THREE.MeshPhongMaterial({color:0x000000});
+    for(let dx of [-0.8,0.8]) {
+      for(let dz of [-1.4,1.4]) {
+        const wheel = new THREE.Mesh(wheelGeom, wheelMat);
+        wheel.rotation.z = Math.PI/2;
+        wheel.position.set(dx,0.2,dz);
+        carGroup.add(wheel);
+      }
+    }
+    carGroup.position.set(x,0,z);
+    carGroup.visible = false;
+    scene.add(carGroup);
+    return carGroup;
+  }
+
+  // --- INITIALIZE SCENE ---
+  const spots = [];
+  const cars = [];
+  const spotCount = 7;
+  for(let i=0; i<spotCount; i++){
+    const x = i*4 - 12;
+    const z = 0;
+    const spotName = `A${i+1}`;
+    const spot = createSpot(x,z);
+    spot.name = spotName;
+    spots.push(spot);
+    const car = createCar(x,z);
+    car.name = spotName;
+    cars.push(car);
+  }
+
+  async function refreshParking(){
+    try {
+      const res = await fetch("/api/parking/spots/all");
+      const data = await res.json();
+      cars.forEach(car => car.visible = false);
+      data.spots.forEach(spotInfo => {
+        const car3D = cars.find(c => c.name === spotInfo.spot_name);
+        const spot3D = spots.find(s => s.name === spotInfo.spot_name);
+        if (!car3D || !spot3D) return;
+
+        let spotColor = 0x32cd32; // Default green for available
+        let carColor = 0xff0000;
+        let carVisible = false;
+
+        if(spotInfo.status === "reserved"){
+          spotColor = 0xff0000;
+          carColor = 0xff0000;
+          carVisible = true;
+        } else if(spotInfo.status === "guest"){
+          spotColor = 0x1e90ff;
+          carColor = 0x1e90ff;
+          carVisible = true;
+        }
+
+        spot3D.material.color.set(spotColor);
+        car3D.visible = carVisible;
+        car3D.children[0].material.color.set(carColor);
+      });
+    } catch(err){
+      console.error("Parking API error", err);
+    }
+  }
+
+  // --- RENDER LOOP & RESIZE ---
+  setInterval(refreshParking, 2000);
+  refreshParking();
+
+  function animate(){
+    requestAnimationFrame(animate);
+    renderer.render(scene,camera);
+  }
+  animate();
+
+  window.addEventListener('resize',()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>

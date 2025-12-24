@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Office 3D Control</title>
+  <style>
+    body { margin:0; overflow:hidden; display:flex; }
+    #ui {
+      width:220px; padding:20px;
+      background:#111; color:white; font-family:sans-serif;
+    }
+    #ui h2 { margin-top:0; }
+    button {
+      margin:6px 0; padding:6px 10px;
+      border:none; border-radius:5px;
+      cursor:pointer; background:#27ae60; color:white;
+      font-weight:bold; transition:0.3s;
+    }
+    button:hover { background:#2ecc71; }
+
+    /* AC panel */
+    #ac-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(20,20,20,0.95);
+      border: 2px solid #27ae60;
+      border-radius: 10px;
+      padding: 15px;
+      display: none;
+      color: white;
+      font-family: sans-serif;
+      width: 220px;
+    }
+    #ac-panel h3 { margin-top: 0; }
+    #ac-panel input {
+      width: 100%; margin: 5px 0; padding: 5px;
+      border-radius: 5px; border: none;
+    }
+
+    /* Room panel */
+    #room-panel {
+      display:none;
+      position:absolute;
+      top:280px;
+      right:20px;
+      background:rgba(20,20,20,0.95);
+      border:2px solid #2980b9;
+      border-radius:10px;
+      padding:15px;
+      width:220px;
+      color:white;
+      font-family:sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h2>Controls</h2>
+    <p>London</p>
+    <button onclick="toggleLight('london',0)">Toggle Light</button>
+    <p>Boot</p>
+    <button onclick="toggleLight('boot',1)">Toggle Light</button>
+    <p>Meeting</p>
+    <button onclick="toggleLight('meeting',2)">Toggle Light</button>
+    <br><br>
+    <button onclick="refreshStatus()">🔄 Refresh Status</button>
+  </div>
+
+  <div id="ac-panel">
+    <h3 id="ac-room-title">AC Control</h3>
+    <label>
+      Temperature (°C):
+      <input type="number" id="ac-temp" min="16" max="30" value="22">
+    </label>
+    <br>
+    <button onclick="saveAC()">Power ON</button>
+    <button onclick="powerOffAC()">Power OFF</button>
+    <br><br>
+    <h4>Schedule</h4>
+    <label>Start: <input type="datetime-local" id="ac-start"></label><br>
+    <label>End: <input type="datetime-local" id="ac-end"></label><br>
+    <button onclick="scheduleAC()">Set Schedule</button>
+    <br><br>
+    <button onclick="closeAC()">Close</button>
+  </div>
+
+  <div id="room-panel">
+    <h3 id="room-title">Room</h3>
+    <p id="room-status">Status: ...</p>
+    <button onclick="bookRoom()">Book</button>
+    <button onclick="closeRoom()">Close</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script>
+  // ---------------- SETUP ----------------
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x202020);
+  const camera = new THREE.PerspectiveCamera(60, (window.innerWidth-220)/window.innerHeight, 0.1, 1000);
+  const defaultCameraPos = new THREE.Vector3(0,6,22);
+  camera.position.copy(defaultCameraPos);
+  camera.lookAt(0,2,0);
+
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(window.innerWidth-220, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0x303030));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  dirLight.position.set(10, 15, 10);
+  scene.add(dirLight);
+
+  const bulbs = [], lights = [], aircons = [], doors = [], projectors = [], tvs = [];
+  const positions = [-10,0,10];
+  const roomKeys = ["london","boot","meeting"];
+
+  // Floor
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(40,30),
+    new THREE.MeshPhongMaterial({color:0x888888, side:THREE.DoubleSide})
+  );
+  floor.rotation.x = -Math.PI/2;
+  scene.add(floor);
+
+  // ---------------- BUILD ROOMS ----------------
+  for(let i=0;i<3;i++){
+    const wallMat = new THREE.MeshPhongMaterial({color:0x555555, side:THREE.DoubleSide});
+    const backWall = new THREE.Mesh(new THREE.PlaneGeometry(8,5), wallMat);
+    backWall.position.set(positions[i],2.5,-4);
+    scene.add(backWall);
+
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(8,5), wallMat);
+    leftWall.position.set(positions[i]-4,2.5,0);
+    leftWall.rotation.y = Math.PI/2;
+    scene.add(leftWall);
+
+    const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(8,5), wallMat);
+    rightWall.position.set(positions[i]+4,2.5,0);
+    rightWall.rotation.y = -Math.PI/2;
+    scene.add(rightWall);
+
+    // Bulb + spotlight
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 32, 32),
+      new THREE.MeshPhongMaterial({color:0x333333, emissive:0x000000, transparent:true, opacity:0.95})
+    );
+    bulb.position.set(positions[i],5.5,0);
+    scene.add(bulb);
+    bulbs.push(bulb);
+
+    const spot = new THREE.SpotLight(0xfff5d0, 0, 30, Math.PI/3, 0.5, 2);
+    spot.position.set(positions[i],5.4,0);
+    spot.target.position.set(positions[i],0,0);
+    scene.add(spot);
+    scene.add(spot.target);
+    lights.push(spot);
+
+    // AC unit
+    const acGroup = new THREE.Group();
+    const acBody = new THREE.Mesh(new THREE.BoxGeometry(4,1.5,0.6), new THREE.MeshPhongMaterial({color:0xf5f5f5}));
+    acGroup.add(acBody);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = "black"; ctx.fillRect(0,0,256,128);
+    const texture = new THREE.CanvasTexture(canvas);
+    const acScreen = new THREE.Mesh(new THREE.PlaneGeometry(2,1), new THREE.MeshBasicMaterial({map:texture}));
+    acScreen.position.set(0,0,0.31);
+    acGroup.add(acScreen);
+
+    const acGlow = new THREE.Mesh(new THREE.PlaneGeometry(4,1.5), new THREE.MeshPhongMaterial({color:0x66ccff, transparent:true, opacity:0}));
+    acGlow.position.z = 0.32;
+    acGroup.add(acGlow);
+
+    acGroup.position.set(positions[i],3.8,-3.6);
+    scene.add(acGroup);
+
+    aircons.push({mesh:acGroup, room:roomKeys[i], ctx:ctx, texture:texture, glow:acGlow});
+
+    // 🚪 Door group with screen
+    const frameMat = new THREE.MeshPhongMaterial({color:0x333333});
+    const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.15), new THREE.MeshPhongMaterial({color:0x8B4513}));
+
+    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.5, 0.2), frameMat);
+    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.5, 0.2), frameMat);
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.2), frameMat);
+    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.2), frameMat);
+
+    frameLeft.position.set(-0.65, 0, 0.05);
+    frameRight.position.set(0.65, 0, 0.05);
+    frameTop.position.set(0, 1.25, 0.05);
+    frameBottom.position.set(0, -1.25, 0.05);
+
+    const doorGroup = new THREE.Group();
+    doorGroup.add(doorPanel, frameLeft, frameRight, frameTop, frameBottom);
+    doorGroup.position.set(positions[i], 1.25, 4);
+
+    // 📺 Black screen on door
+    const screenCanvas = document.createElement('canvas');
+    screenCanvas.width = 256; screenCanvas.height = 128;
+    const screenCtx = screenCanvas.getContext('2d');
+    screenCtx.fillStyle = "black"; screenCtx.fillRect(0,0,256,128);
+    screenCtx.fillStyle = "lime"; screenCtx.font = "40px Arial"; screenCtx.textAlign="center";
+    screenCtx.fillText("Available", 128,80);
+
+    const screenTexture = new THREE.CanvasTexture(screenCanvas);
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.1,0.5),
+      new THREE.MeshBasicMaterial({map:screenTexture})
+    );
+    screen.position.set(0, 0.8, 0.12);
+    doorGroup.add(screen);
+
+    scene.add(doorGroup);
+    doors.push({mesh:doorGroup, room:roomKeys[i], ctx:screenCtx, texture:screenTexture});
+
+    // ---------------- Projector ----------------
+    const projector = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6,0.3,0.6),
+      new THREE.MeshPhongMaterial({color:0x222222, emissive:0x000000})
+    );
+    projector.position.set(positions[i],5.2,-2);
+    scene.add(projector);
+    projectors.push({mesh:projector, room:roomKeys[i]});
+
+    // ---------------- TV ----------------
+    const tv = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.5,1.5),
+      new THREE.MeshPhongMaterial({color:0x000000})
+    );
+    tv.position.set(positions[i],2,-3.9);
+    scene.add(tv);
+    tvs.push({mesh:tv, room:roomKeys[i]});
+  }
+
+  // ---------------- INTERACTIONS ----------------
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let selectedAC = null;
+  let selectedRoom = null;
+
+  window.addEventListener('click', (event)=>{
+    mouse.x = ((event.clientX-220) / (window.innerWidth-220)) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    // AC
+    const intersectsAC = raycaster.intersectObjects(aircons.map(a=>a.mesh), true);
+    if(intersectsAC.length>0){
+      let obj = intersectsAC[0].object;
+      while(obj.parent && !aircons.find(a=>a.mesh === obj)) obj = obj.parent;
+      const acObj = aircons.find(a=>a.mesh === obj);
+      if(acObj){ openACPanel(acObj); return; }
+    }
+
+    // Doors
+    const intersectsDoor = raycaster.intersectObjects(doors.map(d=>d.mesh), true);
+    if(intersectsDoor.length>0){
+      const doorObj = doors.find(d=>d.mesh === intersectsDoor[0].object || d.mesh === intersectsDoor[0].object.parent);
+      if(doorObj){ openRoomPanel(doorObj.room); return; }
+    }
+  });
+
+  // ---------------- PANELS ----------------
+  function openACPanel(acObj){
+    selectedAC = acObj;
+    camera.position.set(acObj.mesh.position.x, 5, 8);
+    camera.lookAt(acObj.mesh.position);
+    document.getElementById('ac-room-title').innerText = "AC - " + acObj.room;
+    document.getElementById('ac-panel').style.display = "block";
+    document.getElementById("ac-temp").value = 22;
+    document.getElementById("ac-start").value = "";
+    document.getElementById("ac-end").value = "";
+  }
+  function closeAC(){
+    document.getElementById('ac-panel').style.display = "none";
+    camera.position.copy(defaultCameraPos);
+    camera.lookAt(0,2,0);
+    selectedAC = null;
+  }
+
+  async function openRoomPanel(room){
+    selectedRoom = room;
+    document.getElementById("room-title").innerText = "Room - " + room;
+    document.getElementById("room-panel").style.display = "block";
+    camera.position.set(positions[roomKeys.indexOf(room)], 3, 10);
+    camera.lookAt(positions[roomKeys.indexOf(room)],2,0);
+
+    const res = await fetch("/api/meetings/rooms/available");
+    const data = await res.json();
+    const status = data.available_rooms.includes(room) ? "Available ✅" : "Booked ❌";
+    document.getElementById("room-status").innerText = "Status: " + status;
+  }
+  function closeRoom(){
+    document.getElementById("room-panel").style.display = "none";
+    camera.position.copy(defaultCameraPos);
+    camera.lookAt(0,2,0);
+    selectedRoom = null;
+  }
+  async function bookRoom(){
+    if(!selectedRoom) return;
+    const res = await fetch("/api/meetings/rooms/book", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({room: selectedRoom})
+    });
+    const data = await res.json();
+    alert(data.message || JSON.stringify(data));
+    document.getElementById("room-status").innerText = "Status: Booked ❌";
+  }
+
+  // ---------------- AC FUNCTIONS ----------------
+  async function saveAC(){
+    if(!selectedAC) return;
+    const newTemp = parseInt(document.getElementById("ac-temp").value);
+    await fetch("/api/environment/temperature/set", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({room:selectedAC.room, temperature:newTemp, ac_on:true})
+    });
+    refreshStatus();
+  }
+  async function powerOffAC(){
+    if(!selectedAC) return;
+    await fetch("/api/environment/temperature/set", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({room:selectedAC.room, ac_on:false})
+    });
+    refreshStatus();
+  }
+
+  // ---------------- REFRESH STATUS ----------------
+  async function refreshStatus(){
+    try {
+      // --- AC ---
+      const resAC = await fetch("/api/environment/temperature/current");
+      const dataAC = await resAC.json();
+      aircons.forEach(ac=>{
+        const state = dataAC?.[ac.room]?.ac_on;
+        const temp = dataAC?.[ac.room]?.temperature;
+        const ctx = ac.ctx;
+        ctx.fillStyle = "black"; ctx.fillRect(0,0,256,128);
+        if(state){
+          ctx.fillStyle = "cyan"; ctx.font = "60px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
+          ctx.fillText((temp ?? 22)+"°C",128,64);
+          ac.glow.material.opacity = 0.5;
+        } else {
+          ac.glow.material.opacity = 0;
+        }
+        ac.texture.needsUpdate = true;
+      });
+
+      // --- Doors (meeting availability) ---
+      const resAvail = await fetch("/api/meetings/rooms/available");
+      const dataAvail = await resAvail.json();
+      doors.forEach(d=>{
+        d.ctx.fillStyle="black"; d.ctx.fillRect(0,0,256,128);
+        d.ctx.font="40px Arial"; d.ctx.textAlign="center"; d.ctx.textBaseline="middle";
+        if(dataAvail.available_rooms.includes(d.room)){
+          d.ctx.fillStyle="lime"; d.ctx.fillText("Available",128,64);
+        } else {
+          d.ctx.fillStyle="red"; d.ctx.fillText("Booked",128,64);
+        }
+        d.texture.needsUpdate = true;
+      });
+
+      // --- Equipment (lights + projector + TV) ---
+      const resEqAll = await fetch("/api/meetings/rooms/all/equipment");
+      const dataEqAll = await resEqAll.json();
+      roomKeys.forEach((room,i)=>{
+        const eq = dataEqAll?.[room]?.equipment || {};
+        // Lights
+        if(eq.light_on){
+          lights[i].intensity=2;
+          bulbs[i].material.emissive.setHex(0xffffaa);
+        } else {
+          lights[i].intensity=0;
+          bulbs[i].material.emissive.setHex(0x000000);
+        }
+        // Projector
+        const proj = projectors.find(p=>p.room===room);
+        if(proj?.mesh?.material?.emissive){
+          proj.mesh.material.emissive.setHex(eq.projector_on ? 0xffffff : 0x000000);
+        }
+        // TV
+        const tv = tvs.find(t=>t.room===room);
+        if(tv?.mesh?.material?.color){
+          tv.mesh.material.color.set(eq.tv_on ? 0x0000ff : 0x000000);
+        }
+      });
+    } catch(err){
+      console.error("Error refreshing status:",err);
+    }
+  }
+  refreshStatus();
+  setInterval(refreshStatus,2000);
+
+  // ---------------- LIGHT TOGGLE ----------------
+  async function toggleLight(room,index){
+    const newState = lights[index].intensity === 0;
+    lights[index].intensity = newState ? 2 : 0;
+    bulbs[index].material.emissive.setHex(newState ? 0xffffaa : 0x000000);
+    await fetch(`/api/environment/lights/control`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({room:room,state:newState})
+    });
+  }
+
+  // ---------------- SCHEDULE AC ----------------
+  async function scheduleAC(){
+    if(!selectedAC) return;
+    const start=document.getElementById("ac-start").value;
+    const end=document.getElementById("ac-end").value;
+    const temp=parseInt(document.getElementById("ac-temp").value);
+    if(!start||!end){ alert("Please select start and end times."); return; }
+    const formattedStart=start.replace("T"," ");
+    const formattedEnd=end.replace("T"," ");
+    await fetch("/api/environment/hvac/schedule",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({room:selectedAC.room,start:formattedStart,end:formattedEnd,temperature:temp})
+    });
+    alert("Schedule saved for "+selectedAC.room+" at "+temp+"°C");
+  }
+
+  // ---------------- ANIMATE ----------------
+  function animate(){
+    requestAnimationFrame(animate);
+    renderer.render(scene,camera);
+  }
+  animate();
+</script>
+</body>
+</html>

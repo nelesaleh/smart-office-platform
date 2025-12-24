@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Home Control</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { margin:0; font-family:"Segoe UI",Arial,sans-serif; background:#f5f5f5; color:#333; }
+    header { background:#2c3e50; color:white; padding:15px; text-align:center; font-size:22px; }
+    nav.tabs { display:flex; justify-content:space-around; background:#34495e; }
+    nav.tabs span { flex:1; text-align:center; padding:12px; cursor:pointer; color:white; }
+    nav.tabs span.active { background:#2980b9; font-weight:bold; }
+    .content { padding:20px; }
+    .hidden { display:none; }
+    .card { background:white; border-radius:10px; padding:20px; margin:20px auto; max-width:400px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.1); text-align:center; }
+    .card h3 { margin-bottom:15px; color:#2c3e50; }
+    .temp-display { font-size:32px; font-weight:bold; margin:10px 0; color:#2980b9; }
+    .status-text { font-size:16px; margin-bottom:10px; color:#555; }
+    .temp-controls button { margin:5px; padding:10px 20px; font-size:18px; border:none; border-radius:6px;
+      background:#2980b9; color:white; cursor:pointer; }
+    .temp-controls button:hover { background:#1f6391; }
+    .power-btn { background:#e74c3c; border:none; padding:15px 20px; border-radius:50%; font-size:22px;
+      color:white; cursor:pointer; margin-top:10px; }
+    .power-btn.on { background:#27ae60; }
+  </style>
+</head>
+<body>
+  <header>🏠 Smart Home Control</header>
+  <nav class="tabs">
+    <span class="active" onclick="showTab('lights')">Lights</span>
+    <span onclick="showTab('temperature')">Temperature</span>
+    <span onclick="showTab('schedule')">Schedule</span>
+    <span onclick="showTab('energy')">Energy</span>
+  </nav>
+
+  <div class="content">
+    <!-- Lights -->
+    <div id="tab-lights">
+      <div class="card" id="light-office"><i class="fas fa-lightbulb power-btn" onclick="toggleLight('office')"></i><h3>Office Light</h3></div>
+      <div class="card" id="light-living"><i class="fas fa-lightbulb power-btn" onclick="toggleLight('living')"></i><h3>Living Room Light</h3></div>
+      <div class="card" id="light-bedroom"><i class="fas fa-lightbulb power-btn" onclick="toggleLight('bedroom')"></i><h3>Bedroom Light</h3></div>
+    </div>
+
+    <!-- Temperature -->
+    <div id="tab-temperature" class="hidden">
+      <div class="card">
+        <h3>Office</h3>
+        <div class="temp-display" id="temp-office">-- °C</div>
+        <div class="status-text" id="status-office">AC OFF</div>
+        <div class="temp-controls">
+          <button onclick="changeTemp('office',1)">▲</button>
+          <button onclick="changeTemp('office',-1)">▼</button>
+        </div>
+        <button class="power-btn" id="power-office" onclick="toggleAC('office')"><i class="fas fa-power-off"></i></button>
+      </div>
+
+      <div class="card">
+        <h3>Living Room</h3>
+        <div class="temp-display" id="temp-living">-- °C</div>
+        <div class="status-text" id="status-living">AC OFF</div>
+        <div class="temp-controls">
+          <button onclick="changeTemp('living',1)">▲</button>
+          <button onclick="changeTemp('living',-1)">▼</button>
+        </div>
+        <button class="power-btn" id="power-living" onclick="toggleAC('living')"><i class="fas fa-power-off"></i></button>
+      </div>
+
+      <div class="card">
+        <h3>Bedroom</h3>
+        <div class="temp-display" id="temp-bedroom">-- °C</div>
+        <div class="status-text" id="status-bedroom">AC OFF</div>
+        <div class="temp-controls">
+          <button onclick="changeTemp('bedroom',1)">▲</button>
+          <button onclick="changeTemp('bedroom',-1)">▼</button>
+        </div>
+        <button class="power-btn" id="power-bedroom" onclick="toggleAC('bedroom')"><i class="fas fa-power-off"></i></button>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div id="tab-schedule" class="hidden">
+      <div class="card">
+        <h3>Set HVAC Schedule</h3>
+        <select id="sch-room">
+          <option value="office">Office</option>
+          <option value="living">Living</option>
+          <option value="bedroom">Bedroom</option>
+        </select><br><br>
+        Start: <input type="time" id="sch-start"><br><br>
+        End: <input type="time" id="sch-end"><br><br>
+        <button onclick="addSchedule()">Add</button>
+      </div>
+      <div id="sch-list" class="card"></div>
+    </div>
+
+    <!-- Energy -->
+    <div id="tab-energy" class="hidden">
+      <div class="card"><h3>Today</h3><p id="energy-today"></p></div>
+      <div class="card"><h3>This Week</h3><p id="energy-week"></p></div>
+      <div class="card"><h3>This Month</h3><p id="energy-month"></p></div>
+    </div>
+  </div>
+
+  <script>
+    function showTab(name){
+      document.querySelectorAll(".content > div").forEach(d=>d.classList.add("hidden"));
+      document.getElementById("tab-"+name).classList.remove("hidden");
+      document.querySelectorAll("nav.tabs span").forEach(s=>s.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+
+    // Lights
+    async function toggleLight(room){
+      let el = document.querySelector(`#light-${room} .power-btn`);
+      let newState = !el.classList.contains("on");
+      await fetch("/api/environment/lights/control", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({room:room, state:newState})
+      });
+      if(newState){ el.classList.add("on"); el.style.background="#27ae60"; }
+      else{ el.classList.remove("on"); el.style.background="#e74c3c"; }
+    }
+
+    // Temperature
+    async function fetchTemperature(){
+      const res = await fetch("/api/environment/temperature/current");
+      const data = await res.json();
+      for (let room in data) {
+        const temp = data[room].temperature;
+        const ac = data[room].ac_on;
+        document.getElementById("temp-"+room).innerText = temp + "°C";
+        document.getElementById("status-"+room).innerText = ac ? "AC ON" : "AC OFF";
+        let btn = document.getElementById("power-"+room);
+        if(ac){ btn.classList.add("on"); btn.style.background="#27ae60"; }
+        else{ btn.classList.remove("on"); btn.style.background="#e74c3c"; }
+      }
+    }
+
+    function changeTemp(room,delta){
+      let el = document.getElementById("temp-"+room);
+      let current = parseInt(el.innerText);
+      let newVal = current + delta;
+      if(newVal < 16) newVal = 16;
+      if(newVal > 30) newVal = 30;
+      el.innerText = newVal+"°C";
+      fetch("/api/environment/temperature/set", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({room:room, temperature:newVal})
+      });
+    }
+
+    function toggleAC(room){
+      let btn=document.getElementById("power-"+room);
+      let newState=!btn.classList.contains("on");
+      fetch("/api/environment/temperature/set", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({room:room, ac_on:newState})
+      });
+      if(newState){ btn.classList.add("on"); btn.style.background="#27ae60"; document.getElementById("status-"+room).innerText="AC ON"; }
+      else{ btn.classList.remove("on"); btn.style.background="#e74c3c"; document.getElementById("status-"+room).innerText="AC OFF"; }
+    }
+
+    // Schedule
+    async function addSchedule(){
+      let room=document.getElementById("sch-room").value;
+      let start=document.getElementById("sch-start").value;
+      let end=document.getElementById("sch-end").value;
+      const res = await fetch("/api/environment/hvac/schedule", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({room,start,end})
+      });
+      const data = await res.json();
+      document.getElementById("sch-list").innerText = JSON.stringify(data.schedule,null,2);
+    }
+
+    // Energy
+    async function fetchEnergy(){
+      const res=await fetch("/api/environment/energy/usage");
+      const data=await res.json();
+      document.getElementById("energy-today").innerText=data.today_kwh+" kWh";
+      document.getElementById("energy-week").innerText=data.week_kwh+" kWh";
+      document.getElementById("energy-month").innerText=data.month_kwh+" kWh";
+    }
+
+    // Initial load
+    fetchTemperature();
+    fetchEnergy();
+  </script>
+</body>
+</html>

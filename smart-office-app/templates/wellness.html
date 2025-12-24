@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Employee Wellness Dashboard</title>
+  <style>
+    body {
+      margin:0; padding:20px; font-family:Arial, sans-serif;
+      background:#f5f7fa; color:#333;
+    }
+    h1 { text-align:center; }
+    .card {
+      background:white; border-radius:10px; padding:20px;
+      margin:15px 0; box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    }
+    .card h2 { margin-top:0; font-size:18px; }
+    pre {
+      background:#eee; padding:10px; border-radius:6px; overflow-x:auto;
+    }
+    #grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap:20px;
+    }
+    button {
+      padding:10px 15px; border:none; border-radius:6px;
+      background:#4caf50; color:white; cursor:pointer;
+    }
+    button:hover { background:#45a049; }
+    input, select {
+      width:100%; padding:8px; margin:6px 0;
+      border-radius:6px; border:1px solid #ccc;
+    }
+    .response {
+      margin-top:10px; font-size:14px;
+      white-space:pre-wrap;
+    }
+    .success { color:green; }
+    .error { color:red; }
+  </style>
+</head>
+<body>
+  <h1>🌱 Employee Wellness Dashboard</h1>
+
+  <div id="grid">
+    <div class="card">
+      <h2>Air Quality</h2>
+      <button onclick="loadAirQuality()">Refresh</button>
+      <pre id="airQuality">Loading...</pre>
+    </div>
+
+    <div class="card">
+      <h2>Noise Levels</h2>
+      <button onclick="loadNoise()">Refresh</button>
+      <pre id="noiseLevels">Loading...</pre>
+    </div>
+
+    <div class="card">
+      <h2>Ergonomics Check</h2>
+      <button onclick="loadErgonomics()">Refresh</button>
+      <pre id="ergonomics">Loading...</pre>
+    </div>
+
+    <div class="card">
+      <h2>Daily Wellness Check-in</h2>
+      <form id="checkinForm">
+        <input type="text" id="user" placeholder="Enter your name" required>
+        <select id="mood">
+          <option value="happy">😊 Happy</option>
+          <option value="neutral" selected>😐 Neutral</option>
+          <option value="sad">😔 Sad</option>
+          <option value="stressed">😣 Stressed</option>
+        </select>
+        <select id="energy">
+          <option value="high">⚡ High</option>
+          <option value="average" selected>🔋 Average</option>
+          <option value="low">😴 Low</option>
+        </select>
+        <button type="submit">Submit</button>
+      </form>
+      <div id="checkinResponse" class="response"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadAirQuality(){
+      const res = await fetch("/api/wellness/air-quality");
+      const data = await res.json();
+      document.getElementById("airQuality").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function loadNoise(){
+      const res = await fetch("/api/wellness/noise-levels");
+      const data = await res.json();
+      document.getElementById("noiseLevels").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function loadErgonomics(){
+      const res = await fetch("/api/wellness/ergonomics/check");
+      const data = await res.json();
+      document.getElementById("ergonomics").textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Handle check-in form
+    document.getElementById("checkinForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = {
+        user: document.getElementById("user").value,
+        mood: document.getElementById("mood").value,
+        energy: document.getElementById("energy").value
+      };
+      try {
+        const res = await fetch("/api/wellness/checkin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if(res.ok){
+          document.getElementById("checkinResponse").innerHTML =
+            `<span class="success">✅ ${result.message}</span>`;
+        } else {
+          document.getElementById("checkinResponse").innerHTML =
+            `<span class="error">❌ ${result.error}</span>`;
+        }
+      } catch (err) {
+        document.getElementById("checkinResponse").innerHTML =
+          `<span class="error">❌ Error: ${err}</span>`;
+      }
+    });
+
+    // auto load on start
+    loadAirQuality();
+    loadNoise();
+    loadErgonomics();
+  </script>
+</body>
+</html>

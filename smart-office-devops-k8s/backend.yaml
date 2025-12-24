@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-office-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smart-office-backend
+  template:
+    metadata:
+      labels:
+        app: smart-office-backend
+    spec:
+      containers:
+      - name: smart-office-backend
+        image: nelerayan/smart-office-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MONGO_URI
+          value: "mongodb://mongodb-service:27017/smart_office"
+        
+        livenessProbe:
+          httpGet:
+            path: /       # <--- التعديل هنا: غيرنا المسار إلى / 
+            port: 5000
+          initialDelaySeconds: 30   # أعدنا الوقت لقيمة معقولة (30 ثانية كافية)
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smart-office-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: smart-office-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
