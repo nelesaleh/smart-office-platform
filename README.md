@@ -1,10 +1,10 @@
 # 🏢 Smart Office Automation Platform
 
-✅ **Build Status:** Passing
-🐳 **Container:** Docker
-☸️ **Platform:** Kubernetes
-🏗️ **CI/CD:** Jenkins
-🐍 **Language:** Python 3.11
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Platform](https://img.shields.io/badge/platform-kubernetes-blue)
+![Container](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)
+![CI/CD](https://img.shields.io/badge/jenkins-%232C5263.svg?style=flat&logo=jenkins&logoColor=white)
+![Python](https://img.shields.io/badge/python-3.11-blue.svg)
 
 A smart website designed to manage office utilities like lights and temperature. This project shows a full **DevOps Automation System**. I organized it as a **Monorepo**, meaning the App Code and the Server Settings are all in one place.
 
