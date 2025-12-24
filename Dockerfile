@@ -5,19 +5,19 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # 1. Copy requirements file and install dependencies
-# (بما أنه في الجذر، ننسخه مباشرة)
+# Since requirements.txt is in the root directory, we copy it directly
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 2. Copy the application code specifically
-# (ننسخ محتويات المجلد الفرعي smart-office-app إلى داخل الحاوية)
+# 2. Copy the application code
+# We copy the contents of the 'smart-office-app' subfolder into the container's working directory
 COPY smart-office-app/ .
 
-# 3. Create a non-root user for security
+# 3. Create a non-root user for security (Best Practice)
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-# 4. Expose port 5000
+# 4. Expose port 5000 for the Flask application
 EXPOSE 5000
 
 # 5. Command to run the application
