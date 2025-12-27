@@ -10,6 +10,7 @@ pipeline {
 
         DOCKER_CREDS = credentials('docker-hub-credentials')
         K8S_CRED_ID = 'k8s-config'
+        DOCKER_BUILDKIT = '0'
     }
 
     stages {
