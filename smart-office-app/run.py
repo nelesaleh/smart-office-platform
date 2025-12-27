@@ -8,15 +8,21 @@ from App.blueprints.automation_rules import automation_rules_bp
 from prometheus_client import generate_latest  
 
 app = create_app()
-
 # --- 2. (Health & Metrics) ---
+
+# Liveness Probe
 @app.route('/health/live')
 def health_live():
-    return "OK", 200
+    return {"status": "alive"}, 200
 
+# Readiness Probe
 @app.route('/health/ready')
 def health_ready():
-    return "OK", 200
+    try:
+        mongo.db.command('ping')
+        return {"status": "ready", "db": "connected"}, 200
+    except Exception as e:
+        return {"status": "not ready", "error": str(e)}, 503
 
 @app.route('/metrics')
 def metrics():
