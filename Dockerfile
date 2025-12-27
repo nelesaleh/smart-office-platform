@@ -1,14 +1,14 @@
-# השתמש בגרסה המלאה - זה מונע תקיעות של קומפילציה
 FROM python:3.11-slim
 
 WORKDIR /app
 
 COPY requirements.txt .
 
-# הוספנו הגבלת זמן ופירוט לוגים כדי שלא ייתקע לנצח
-RUN pip install -v --timeout 100 --no-cache-dir -r requirements.txt
+# --prefer-binary : מונע קומפילציה (מונע תקיעות)
+# --no-cache-dir : שומר על האימג' קטן
+RUN pip install --prefer-binary --no-cache-dir -r requirements.txt
 
-# העתקת התיקייה הפנימית (חובה בגלל שזה Monorepo)
+# העתקת התיקייה הפנימית
 COPY smart-office-app/ .
 
 CMD ["python", "run.py"]
