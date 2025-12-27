@@ -1,21 +1,14 @@
 FROM python:3.11-slim
 
-# 1. יצירת משתמש ותיקייה
-RUN useradd -m appuser && mkdir /app && chown appuser:appuser /app
-
+# הגדרת תיקיית עבודה
 WORKDIR /app
 
-# 2. העתקת ה-requirements (זה בסדר שהוא בחוץ)
+# העתקת דרישות והתקנה
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- התיקון הקריטי כאן ---
-# במקום COPY . . (שמעתיק את כל התיקיות)
-# אנחנו מעתיקים את התוכן של תיקיית האפליקציה ישירות ל-Root של הקונטיינר
+# העתקת קוד האפליקציה (מהתיקייה הפנימית לתיקייה הנוכחית)
 COPY smart-office-app/ .
 
-# 4. סידור הרשאות
-RUN chown -R appuser:appuser /app
-
-USER appuser
+# הרצה (ללא USER appuser)
 CMD ["python", "run.py"]
