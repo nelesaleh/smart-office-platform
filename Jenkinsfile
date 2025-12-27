@@ -33,8 +33,8 @@ pipeline {
                     sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
 
                     echo "🔨 Building Image..."
-                    // Build Docker image from the current root directory
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    // התיקון נמצא כאן: הוספת --network=host
+                    sh "docker build --network=host -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
 
                     echo "🚀 Pushing Image..."
                     sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
