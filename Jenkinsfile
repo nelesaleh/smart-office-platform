@@ -5,23 +5,23 @@ pipeline {
         DOCKER_IMAGE = "nelerayan/smart-office-backend"
         DOCKER_TAG = "latest"
 
-        // Directory containing Kubernetes YAML manifests
+        // ✅ Updated: Pointing to the local folder containing YAML files in your Monorepo
         K8S_DIR = "smart-office-devops-k8s"
 
         DOCKER_CREDS = credentials('docker-hub-credentials')
         K8S_CRED_ID = 'k8s-config'
-        DOCKER_BUILDKIT = '0'
     }
 
     stages {
-        // Note: Jenkins automatically checks out the source code at the start of the pipeline.
+        // Note: We removed the separate 'Checkout' stage because in a Monorepo, 
+        // Jenkins automatically checks out all files (App + DevOps) at the start.
 
         stage('Lint Code') {
             steps {
                 echo '🔍 Linting Code...'
                 sh 'pip install pylint flask || true'
 
-                // Lint the main application file
+                // ✅ Updated: Pointing to the Python file inside the 'smart-office-app' folder
                 sh 'pylint --disable=R,C smart-office-app/run.py || true'
             }
         }
@@ -33,8 +33,8 @@ pipeline {
                     sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
 
                     echo "🔨 Building Image..."
-                    // התיקון נמצא כאן: הוספת --network=host
-                    sh "docker build --network=host -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    // ✅ Updated: The Dockerfile is now in the Root, so we build from current directory (.)
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
 
                     echo "🚀 Pushing Image..."
                     sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
@@ -47,15 +47,16 @@ pipeline {
                 script {
                     echo "☸️ Deploying to Kubernetes..."
 
+                    // Ensure you have the 'k8s-config' credential in Jenkins
                     withKubeConfig([credentialsId: K8S_CRED_ID]) {
 
-                        // Apply Kubernetes configurations from the K8s directory
+                        // ✅ Updated: Apply YAML files from the local folder directly
                         sh "kubectl apply -f ${K8S_DIR}/ --validate=false"
 
-                        // Force restart the deployment to pull the latest image
+                        // Restart the deployment to ensure it pulls the new image
                         sh "kubectl rollout restart deployment smart-office-backend"
 
-                        // Verify deployment status
+                        // Wait a few seconds for pods to restart
                         sleep 10
                         sh "kubectl get pods"
                         sh "kubectl get svc smart-office-service"
