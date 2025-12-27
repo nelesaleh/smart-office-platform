@@ -24,9 +24,9 @@ spec:
         
         livenessProbe:
           httpGet:
-            path: /       # <--- التعديل هنا: غيرنا المسار إلى / 
+            path: /       # <--- Modification: Changed path to root (/)
             port: 5000
-          initialDelaySeconds: 30   # أعدنا الوقت لقيمة معقولة (30 ثانية كافية)
+          initialDelaySeconds: 30   # Set to a reasonable start-up time (30s is sufficient)
           periodSeconds: 20
           timeoutSeconds: 5
           failureThreshold: 10

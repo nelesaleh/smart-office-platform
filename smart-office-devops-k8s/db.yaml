@@ -1,4 +1,4 @@
-# --- 1. Deployment (تشغيل الحاوية) ---
+# --- 1. Deployment (Running the Database Container) ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,11 +20,11 @@ spec:
         - containerPort: 27017
 
 ---
-# --- 2. Service (الرابط الشبكي) ---
+# --- 2. Service (Network Access) ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongodb-service  # <--- هذا الاسم مهم جداً، هو ما يستخدمه البايثون للاتصال
+  name: mongodb-service  # <--- Critical: This is the DNS name Python uses to connect
 spec:
   selector:
     app: mongodb

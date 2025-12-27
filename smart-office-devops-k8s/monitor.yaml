@@ -4,7 +4,6 @@ metadata:
   name: smart-office-monitor
   namespace: monitoring
   labels:
-    # 👇👇👇 هذا هو المفتاح الذي كان ناقصاً!
     release: monitoring
     app: smart-office-backend
 spec:
