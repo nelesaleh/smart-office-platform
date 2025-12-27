@@ -5,8 +5,23 @@ from App.blueprints.energy import energy_loop
 from App.blueprints.meeting_rooms import seed_meeting_rooms
 from App.blueprints.parking import seed_parking_spots
 from App.blueprints.automation_rules import automation_rules_bp
+from prometheus_client import generate_latest  
 
 app = create_app()
+
+# --- 2. (Health & Metrics) ---
+@app.route('/health/live')
+def health_live():
+    return "OK", 200
+
+@app.route('/health/ready')
+def health_ready():
+    return "OK", 200
+
+@app.route('/metrics')
+def metrics():
+    return generate_latest(), 200
+# -----------------------------------------------------
 
 if __name__ == '__main__':
     with app.app_context():
