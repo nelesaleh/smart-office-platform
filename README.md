@@ -28,33 +28,15 @@ This project proves I can use **Modern DevOps Tools** to:
 
 ---
 
-## 📂 Project Structure (Monorepo)
-
-I put everything in one main folder so the code and infrastructure stay synced.
-
-```bash
-SMART-OFFICE-PLATFORM/
-├── smart-office-app/        # 🐍 The Python App Code
-│   ├── templates/           # Website Pages (HTML)
-│   ├── run.py               # Main file to start the app
-│   └── ...
-├── smart-office-devops-k8s/ # ⚙️ The Server Settings (Kubernetes Files)
-│   ├── backend.yaml         # App Deployment & LoadBalancer
-│   ├── db.yaml              # Database Settings
-│   └── monitor.yaml         # Monitoring Settings
-├── Dockerfile               # 🐳 Instructions to build the Docker Image
-├── Jenkinsfile              # ⛓ Steps for Jenkins to automate the work
-└── requirements.txt         # List of Python libraries needed
-
 🔄 CI/CD Pipeline Workflow
 The project uses a Jenkins Declarative Pipeline to automate the software delivery lifecycle:
 
-1. Lint Code: Checks Python syntax and style using pylint.
-2. Build Image: Builds the Docker image locally with caching strategies.
-3. Run Unit Tests: Runs unittest inside the isolated container environment.
-Note: Uses Mocking to bypass live DB requirements during testing.
-4. Push Image: Pushes the verified image to Docker Hub (only if tests pass).
-5. Deploy: Applies Kubernetes manifests (kubectl apply) and triggers a zero-downtime rolling restart.
+Lint Code: Checks Python syntax and style using pylint.
+Build Image: Builds the Docker image locally with caching strategies.
+Run Unit Tests: Runs unittest inside the isolated container environment.
+   Note: Uses Mocking to bypass live DB requirements during testing.
+Push Image: Pushes the verified image to Docker Hub (only if tests pass).
+Deploy: Applies Kubernetes manifests (kubectl apply) and triggers a zero-downtime rolling restart.
 
 📡 System Capabilities
 Monitoring & Health
@@ -68,6 +50,7 @@ The system is designed with observability in mind:
 
 Scalability
 Horizontal Scaling: The Flask backend is stateless and deployed via Kubernetes Deployments.
+
 Persistence: MongoDB uses StatefulSets and PVCs (Persistent Volume Claims) to ensure data safety.
 
 🏃‍♂️ How to Run
@@ -88,3 +71,22 @@ docker-hub-credentials (Username/Password)
 k8s-config (Kubeconfig file)
 
 Run the pipeline!
+
+## 📂 Project Structure (Monorepo)
+
+I put everything in one main folder so the code and infrastructure stay synced.
+
+```bash
+SMART-OFFICE-PLATFORM/
+├── smart-office-app/        # 🐍 The Python App Code
+│   ├── templates/           # Website Pages (HTML)
+│   ├── run.py               # Main file to start the app
+│   └── ...
+├── smart-office-devops-k8s/ # ⚙️ The Server Settings (Kubernetes Files)
+│   ├── backend.yaml         # App Deployment & LoadBalancer
+│   ├── db.yaml              # Database Settings
+│   └── monitor.yaml         # Monitoring Settings
+├── Dockerfile               # 🐳 Instructions to build the Docker Image
+├── Jenkinsfile              # ⛓ Steps for Jenkins to automate the work
+└── requirements.txt         # List of Python libraries needed
+
