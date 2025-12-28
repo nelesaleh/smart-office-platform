@@ -10,6 +10,34 @@ from prometheus_client import generate_latest
 app = create_app()
 # --- 2. (Health & Metrics) ---
 
+# 1. מונה בקשות - מחולק לפי נתיב (Endpoint)
+# זה יראה בפלט בדיוק לאן המשתמשים נכנסו
+REQUEST_COUNT = Counter(
+    'smart_office_requests_total', 
+    'Total number of requests by endpoint',
+    ['method', 'endpoint']
+)
+
+# 2. מדד זמן ריצה - כמה זמן האפליקציה באוויר
+APP_START_TIME = time.time()
+UPTIME_GAUGE = Gauge(
+    'smart_office_uptime_seconds', 
+    'Number of seconds the app has been running'
+)
+
+# 3. היסטוגרמה - מודד כמה זמן לוקח לכל בקשה להתבצע (Latency)
+# זהו מדד ה-DevOps היוקרתי ביותר
+REQUEST_LATENCY = Histogram(
+    'smart_office_request_duration_seconds', 
+    'Time spent processing request'
+)
+
+@app.route('/metrics')
+def metrics():
+    # עדכון זמן הריצה לפני שליחת הפלט
+    UPTIME_GAUGE.set(time.time() - APP_START_TIME)
+    return generate_latest(), 200
+
 # Liveness Probe
 @app.route('/health/live')
 def health_live():
@@ -23,10 +51,6 @@ def health_ready():
         return {"status": "ready", "db": "connected"}, 200
     except Exception as e:
         return {"status": "not ready", "error": str(e)}, 503
-
-@app.route('/metrics')
-def metrics():
-    return generate_latest(), 200
 # -----------------------------------------------------
 
 if __name__ == '__main__':
