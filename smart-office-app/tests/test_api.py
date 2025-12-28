@@ -1,10 +1,5 @@
 import unittest
-import sys
-import os
-
-# הוספת התיקייה smart-office-app ל-Path כדי שנצליח לייבא את run.py
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../smart-office-app')))
-
+from unittest.mock import patch, MagicMock
 from run import app
 
 class BasicTests(unittest.TestCase):
@@ -13,13 +8,17 @@ class BasicTests(unittest.TestCase):
         self.app = app.test_client()
         self.app.testing = True
 
-    def test_health_live(self):
-        # בודק שהנתיב /health/live מחזיר 200
-        response = self.app.get('/health/live')
-        self.assertEqual(response.status_code, 200)
+    # אנו משתמשים ב-patch כדי "להחליף" את המונגו האמיתי בחיקוי (Mock)
+    # זה מונע מהאפליקציה לנסות להתחבר לרשת ולהיכשל
+    @patch('flask_pymongo.PyMongo') 
+    def test_health_live(self, mock_pymongo):
+        # כשהאפליקציה תבקש למחוק או לשמור, המוק יגיד "סבבה" בלי לעשות כלום
+        with patch('App.blueprints.parking.mongo.db'):
+            response = self.app.get('/health/live')
+            self.assertEqual(response.status_code, 200)
 
-    def test_metrics(self):
-        # בודק שהנתיב /metrics מחזיר 200
+    @patch('flask_pymongo.PyMongo')
+    def test_metrics(self, mock_pymongo):
         response = self.app.get('/metrics')
         self.assertEqual(response.status_code, 200)
 
