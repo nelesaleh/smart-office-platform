@@ -5,37 +5,69 @@
 ![Container](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/jenkins-%232C5263.svg?style=flat&logo=jenkins&logoColor=white)
 ![Python](https://img.shields.io/badge/python-3.11-blue.svg)
+![Tests](https://img.shields.io/badge/tests-passing-success)
 
-A smart website designed to manage office utilities like lights and temperature. This project shows a full **DevOps Automation System**. I organized it as a **Monorepo**, meaning the App Code and the Server Settings are all in one place.
+A smart automation backend designed to manage office utilities like lights, temperature, and parking spots. This project demonstrates a complete **DevOps Automation System** managed as a **Monorepo**.
 
----
-
-## 🚀 What is this Project?
-
-The **Smart Office Platform** is a dashboard where you can control office devices (Lighting, Security, Parking).
-
-This project proves I can use **Modern DevOps Tools** to:
-1.  **Automate updates** (Jenkins).
-2.  **Package software** (Docker).
-3.  **Keep the app running** (Kubernetes).
-
-### 🛠 Tools Used
-* 🐍 **App:** Python (Flask) & HTML.
-* 🗄️ **Database:** MongoDB.
-* 🐳 **Container:** Docker (To package the app).
-* ☸️ **Manager:** Kubernetes (To run and repair the app).
-* 🏗️ **Automation:** Jenkins (To build and deploy automatically).
+The primary goal of this project is to showcase advanced **CI/CD, Containerization, and Orchestration** capabilities.
 
 ---
 
+## 🚀 Project Overview
+
+The **Smart Office Platform** serves as a robust backend API infrastructure. It includes a comprehensive CI/CD pipeline that ensures code quality, testing, and automated deployment to Kubernetes.
+
+**Key DevOps Features:**
+
+* **Automated Testing:** Unit tests run automatically inside Docker containers on every commit.
+* **Mocking & Isolation:** Tests use `unittest.mock` to simulate Database connections, ensuring build isolation.
+* **Containerization:** Optimized Docker images with non-root security and multi-stage builds.
+* **Orchestration:** Kubernetes deployment with Self-Healing, Services, and Rolling Updates.
+* **Infrastructure:** MongoDB StatefulSet for persistent data management.
+
+### 🛠 Tech Stack
+
+* 🐍 **App:** Python (Flask) REST API.
+* 🗄️ **Database:** MongoDB (NoSQL).
+* 🐳 **Container:** Docker.
+* ☸️ **Orchestration:** Kubernetes (Minikube/EKS).
+* 🏗️ **CI/CD:** Jenkins (Declarative Pipeline).
+
+---
+
+## 📂 Project Structure (Monorepo)
+
+The project is organized as a Monorepo to keep Application code and Infrastructure code in sync.
+
+```bash
+SMART-OFFICE-PLATFORM/
+├── smart-office-app/          # 🐍 Application Source Code
+│   ├── App/                   # Blueprints & Application Logic
+│   ├── tests/                 # 🧪 Unit Tests (Includes __init__.py & Mocks)
+│   ├── run.py                 # Application Entry Point
+│   └── templates/             # HTML Templates
+│
+├── smart-office-devops-k8s/   # ⚙️ Infrastructure as Code (Kubernetes)
+│   ├── backend.yaml           # App Deployment & Service definition
+│   ├── db.yaml                # MongoDB StatefulSet & Service
+│   └── monitor.yaml           # Monitoring configurations
+│
+├── Dockerfile                 # 🐳 Docker Configuration (Build instructions)
+├── Jenkinsfile                # ⛓ CI/CD Pipeline Logic (Groovy)
+└── requirements.txt           # Python Dependencies
 🔄 CI/CD Pipeline Workflow
 The project uses a Jenkins Declarative Pipeline to automate the software delivery lifecycle:
 
 Lint Code: Checks Python syntax and style using pylint.
+
 Build Image: Builds the Docker image locally with caching strategies.
+
 Run Unit Tests: Runs unittest inside the isolated container environment.
-   Note: Uses Mocking to bypass live DB requirements during testing.
+
+Note: Uses Mocking to bypass live DB requirements during testing.
+
 Push Image: Pushes the verified image to Docker Hub (only if tests pass).
+
 Deploy: Applies Kubernetes manifests (kubectl apply) and triggers a zero-downtime rolling restart.
 
 📡 System Capabilities
@@ -72,21 +104,4 @@ k8s-config (Kubeconfig file)
 
 Run the pipeline!
 
-## 📂 Project Structure (Monorepo)
-
-I put everything in one main folder so the code and infrastructure stay synced.
-
 ```bash
-SMART-OFFICE-PLATFORM/
-├── smart-office-app/        # 🐍 The Python App Code
-│   ├── templates/           # Website Pages (HTML)
-│   ├── run.py               # Main file to start the app
-│   └── ...
-├── smart-office-devops-k8s/ # ⚙️ The Server Settings (Kubernetes Files)
-│   ├── backend.yaml         # App Deployment & LoadBalancer
-│   ├── db.yaml              # Database Settings
-│   └── monitor.yaml         # Monitoring Settings
-├── Dockerfile               # 🐳 Instructions to build the Docker Image
-├── Jenkinsfile              # ⛓ Steps for Jenkins to automate the work
-└── requirements.txt         # List of Python libraries needed
-
