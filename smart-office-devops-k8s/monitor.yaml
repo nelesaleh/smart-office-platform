@@ -1,8 +1,39 @@
+# 1. Grafana Service - Port 3000
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring-grafana
+  namespace: default
+spec:
+  selector:
+    app.kubernetes.io/name: grafana
+  ports:
+    - name: http
+      port: 3000        # Port accessed by other services/users
+      targetPort: 3000  # The internal port where the Grafana container listens
+  type: ClusterIP      
+---
+# 2. Prometheus Service - Port 9090
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring-kube-prometheus-prometheus
+  namespace: default
+spec:
+  selector:
+    app.kubernetes.io/name: prometheus
+  ports:
+    - name: web
+      port: 9090        
+      targetPort: 9090
+  type: ClusterIP
+---
+# 3. ServiceMonitor - The Connection Logic
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: smart-office-monitor
-  namespace: monitoring
+  namespace: default
   labels:
     release: monitoring
     app: smart-office-backend
@@ -14,6 +45,6 @@ spec:
     matchNames:
       - default
   endpoints:
-  - port: web
-    path: /metrics
-    interval: 15s
+  - port: web           # Refers to the named port 'web' (port 5000) in your Backend Service
+    path: /metrics     
+    interval: 15s    
