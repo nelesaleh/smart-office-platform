@@ -10,28 +10,35 @@ import time
 
 app = create_app()
 # --- 2. (Health & Metrics) ---
-
+# 1. מונה בקשות עם תוויות (Labels) לניתוח מעמיק
 REQUEST_COUNT = Counter(
     'smart_office_requests_total', 
-    'Total number of requests by endpoint',
+    'Total count of API requests by endpoint and method',
     ['method', 'endpoint']
 )
 
+# 2. מדד זמן ריצה (Uptime) של האפליקציה
 APP_START_TIME = time.time()
 UPTIME_GAUGE = Gauge(
     'smart_office_uptime_seconds', 
-    'Number of seconds the app has been running'
+    'Seconds elapsed since the application started'
 )
 
+# 3. היסטוגרמה למדידת זמני תגובה (Latency) - המדד הכי חשוב ב-DevOps
 REQUEST_LATENCY = Histogram(
     'smart_office_request_duration_seconds', 
-    'Time spent processing request'
+    'Time spent processing each request',
+    ['endpoint']
 )
+
+# --- 🚀 נתיבי האפליקציה (Routes) ---
 
 @app.route('/metrics')
 def metrics():
+    """החזרת הפלט בפורמט Prometheus תקני"""
+    # עדכון זמן הריצה רגע לפני השליחה
     UPTIME_GAUGE.set(time.time() - APP_START_TIME)
-    return {"status": "200ok"},200
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 # Liveness Probe
 @app.route('/health/live')
