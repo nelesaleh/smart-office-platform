@@ -5,7 +5,7 @@ from App.blueprints.energy import energy_loop
 from App.blueprints.meeting_rooms import seed_meeting_rooms
 from App.blueprints.parking import seed_parking_spots
 from App.blueprints.automation_rules import automation_rules_bp
-from prometheus_client import generate_latest  
+from prometheus_client import Counter, Gauge, Histogram, generate_latest
 
 app = create_app()
 # --- 2. (Health & Metrics) ---
