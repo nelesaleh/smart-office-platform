@@ -31,7 +31,7 @@ REQUEST_LATENCY = Histogram(
 @app.route('/metrics')
 def metrics():
     UPTIME_GAUGE.set(time.time() - APP_START_TIME)
-    return 200
+    return {"status": "200ok"},200
 
 # Liveness Probe
 @app.route('/health/live')
