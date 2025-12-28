@@ -55,53 +55,49 @@ SMART-OFFICE-PLATFORM/
 ├── Dockerfile                 # 🐳 Docker Configuration (Build instructions)
 ├── Jenkinsfile                # ⛓ CI/CD Pipeline Logic (Groovy)
 └── requirements.txt           # Python Dependencies
-🔄 CI/CD Pipeline Workflow
-The project uses a Jenkins Declarative Pipeline to automate the software delivery lifecycle:
 
-Lint Code: Checks Python syntax and style using pylint.
+## 🔄 CI/CD Pipeline Workflow
 
-Build Image: Builds the Docker image locally with caching strategies.
+The project uses a **Jenkins Declarative Pipeline** to automate the software delivery lifecycle:
 
-Run Unit Tests: Runs unittest inside the isolated container environment.
+1.  **Lint Code:** Checks Python syntax and style using `pylint`.
+2.  **Build Image:** Builds the Docker image locally with caching strategies.
+3.  **Run Unit Tests:** Runs `unittest` inside the isolated container environment.
+    * *Note:* Uses Mocking to bypass live DB requirements during testing.
+4.  **Push Image:** Pushes the verified image to Docker Hub (only if tests pass).
+5.  **Deploy:** Applies Kubernetes manifests (`kubectl apply`) and triggers a zero-downtime rolling restart.
 
-Note: Uses Mocking to bypass live DB requirements during testing.
+---
 
-Push Image: Pushes the verified image to Docker Hub (only if tests pass).
+## 📡 System Capabilities
 
-Deploy: Applies Kubernetes manifests (kubectl apply) and triggers a zero-downtime rolling restart.
+### Monitoring & Health
 
-📡 System Capabilities
-Monitoring & Health
 The system is designed with observability in mind:
 
-/health/live: Liveness probe for Kubernetes.
+* `/health/live`: Liveness probe for Kubernetes.
+* `/health/ready`: Readiness probe (checks Database connectivity).
+* `/metrics`: Exposes Prometheus-compatible metrics.
 
-/health/ready: Readiness probe (checks Database connectivity).
+### Scalability
 
-/metrics: Exposes Prometheus-compatible metrics.
+* **Horizontal Scaling:** The Flask backend is stateless and deployed via Kubernetes Deployments.
+* **Persistence:** MongoDB uses StatefulSets and PVCs (Persistent Volume Claims) to ensure data safety.
 
-Scalability
-Horizontal Scaling: The Flask backend is stateless and deployed via Kubernetes Deployments.
+---
 
-Persistence: MongoDB uses StatefulSets and PVCs (Persistent Volume Claims) to ensure data safety.
+## 🏃‍♂️ How to Run
 
-🏃‍♂️ How to Run
-Prerequisites
-Kubernetes Cluster (Minikube / EKS)
+### Prerequisites
 
-Jenkins with Docker & Kubernetes plugins
+* Kubernetes Cluster (Minikube / EKS)
+* Jenkins with Docker & Kubernetes plugins
+* Docker Hub Account
 
-Docker Hub Account
+### Quick Start
 
-Quick Start
-Clone the repository.
-
-Configure Jenkins credentials:
-
-docker-hub-credentials (Username/Password)
-
-k8s-config (Kubeconfig file)
-
-Run the pipeline!
-
-```bash
+1.  Clone the repository.
+2.  Configure Jenkins credentials:
+    * `docker-hub-credentials` (Username/Password)
+    * `k8s-config` (Kubeconfig file)
+3.  Run the pipeline!
