@@ -45,3 +45,46 @@ SMART-OFFICE-PLATFORM/
 ├── Dockerfile               # 🐳 Instructions to build the Docker Image
 ├── Jenkinsfile              # ⛓ Steps for Jenkins to automate the work
 └── requirements.txt         # List of Python libraries needed
+
+🔄 CI/CD Pipeline Workflow
+The project uses a Jenkins Declarative Pipeline to automate the software delivery lifecycle:
+
+1. Lint Code: Checks Python syntax and style using pylint.
+2. Build Image: Builds the Docker image locally with caching strategies.
+3. Run Unit Tests: Runs unittest inside the isolated container environment.
+Note: Uses Mocking to bypass live DB requirements during testing.
+4. Push Image: Pushes the verified image to Docker Hub (only if tests pass).
+5. Deploy: Applies Kubernetes manifests (kubectl apply) and triggers a zero-downtime rolling restart.
+
+📡 System Capabilities
+Monitoring & Health
+The system is designed with observability in mind:
+
+/health/live: Liveness probe for Kubernetes.
+
+/health/ready: Readiness probe (checks Database connectivity).
+
+/metrics: Exposes Prometheus-compatible metrics.
+
+Scalability
+Horizontal Scaling: The Flask backend is stateless and deployed via Kubernetes Deployments.
+Persistence: MongoDB uses StatefulSets and PVCs (Persistent Volume Claims) to ensure data safety.
+
+🏃‍♂️ How to Run
+Prerequisites
+Kubernetes Cluster (Minikube / EKS)
+
+Jenkins with Docker & Kubernetes plugins
+
+Docker Hub Account
+
+Quick Start
+Clone the repository.
+
+Configure Jenkins credentials:
+
+docker-hub-credentials (Username/Password)
+
+k8s-config (Kubeconfig file)
+
+Run the pipeline!
