@@ -26,6 +26,14 @@ pipeline {
             }
         }
 
+        stage('Run Unit Tests') {
+            steps {
+                echo '🧪 Running Unit Tests...'
+                sh 'pip install -r requirements.txt'
+                sh 'python -m unittest discover tests'
+            }
+        }
+
         stage('Build & Push Docker') {
             steps {
                 script {
