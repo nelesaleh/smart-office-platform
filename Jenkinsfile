@@ -28,9 +28,8 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
-                echo '🧪 Running Unit Tests...'
-                sh 'pip install -r requirements.txt'
-                sh 'python -m unittest discover tests'
+                echo '🧪 Running Unit Tests inside Container...'
+                sh "docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} python -m unittest discover tests"
             }
         }
 
