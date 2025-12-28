@@ -4,11 +4,10 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-# --prefer-binary : מונע קומפילציה (מונע תקיעות)
-# --no-cache-dir : שומר על האימג' קטן
+# --no-cache-dir: Reduces image size
+# --prefer-binary: Avoids long compilation times for libraries
 RUN pip install --prefer-binary --no-cache-dir -r requirements.txt
 
-# העתקת התיקייה הפנימית
 COPY smart-office-app/ .
 
 CMD ["python", "run.py"]
