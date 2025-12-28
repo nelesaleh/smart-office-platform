@@ -35,27 +35,6 @@ The **Smart Office Platform** serves as a robust backend API infrastructure. It 
 
 ---
 
-## 📂 Project Structure (Monorepo)
-
-The project is organized as a Monorepo to keep Application code and Infrastructure code in sync.
-
-```bash
-SMART-OFFICE-PLATFORM/
-├── smart-office-app/          # 🐍 Application Source Code
-│   ├── App/                   # Blueprints & Application Logic
-│   ├── tests/                 # 🧪 Unit Tests (Includes __init__.py & Mocks)
-│   ├── run.py                 # Application Entry Point
-│   └── templates/             # HTML Templates
-│
-├── smart-office-devops-k8s/   # ⚙️ Infrastructure as Code (Kubernetes)
-│   ├── backend.yaml           # App Deployment & Service definition
-│   ├── db.yaml                # MongoDB StatefulSet & Service
-│   └── monitor.yaml           # Monitoring configurations
-│
-├── Dockerfile                 # 🐳 Docker Configuration (Build instructions)
-├── Jenkinsfile                # ⛓ CI/CD Pipeline Logic (Groovy)
-└── requirements.txt           # Python Dependencies
-
 ## 🔄 CI/CD Pipeline Workflow
 
 The project uses a **Jenkins Declarative Pipeline** to automate the software delivery lifecycle:
@@ -101,3 +80,25 @@ The system is designed with observability in mind:
     * `docker-hub-credentials` (Username/Password)
     * `k8s-config` (Kubeconfig file)
 3.  Run the pipeline!
+
+## 📂 Project Structure (Monorepo)
+
+The project is organized as a Monorepo to keep Application code and Infrastructure code in sync.
+
+```bash
+SMART-OFFICE-PLATFORM/
+├── smart-office-app/          # 🐍 Application Source Code
+│   ├── App/                   # Blueprints & Application Logic
+│   ├── tests/                 # 🧪 Unit Tests (Includes __init__.py & Mocks)
+│   ├── run.py                 # Application Entry Point
+│   └── templates/             # HTML Templates
+│
+├── smart-office-devops-k8s/   # ⚙️ Infrastructure as Code (Kubernetes)
+│   ├── backend.yaml           # App Deployment & Service definition
+│   ├── db.yaml                # MongoDB StatefulSet & Service
+│   └── monitor.yaml           # Monitoring configurations
+│
+├── Dockerfile                 # 🐳 Docker Configuration (Build instructions)
+├── Jenkinsfile                # ⛓ CI/CD Pipeline Logic (Groovy)
+└── requirements.txt           # Python Dependencies
+
